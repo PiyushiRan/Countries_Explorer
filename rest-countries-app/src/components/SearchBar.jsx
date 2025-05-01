@@ -1,13 +1,27 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
-function SearchBar({ onSearch }) {
+function SearchBar({ onSearch, initialQuery }) {
+  const [query, setQuery] = useState(initialQuery || '');
+
+  // Update query when initialQuery changes (e.g., on page refresh or navigation)
+  useEffect(() => {
+    setQuery(initialQuery || '');
+  }, [initialQuery]);
+
+  const handleChange = (e) => {
+    const newQuery = e.target.value;
+    setQuery(newQuery);
+    onSearch(newQuery);
+  };
+
   return (
     <div className="mb-3">
       <input
         type="text"
         className="form-control"
         placeholder="Search by country name..."
-        onChange={(e) => onSearch(e.target.value)}
+        value={query}
+        onChange={handleChange}
       />
     </div>
   );
