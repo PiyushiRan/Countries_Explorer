@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-function FilterBar({ onFilterChange }) {
-  const [selectedRegion, setSelectedRegion] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState('');
+function FilterBar({ onFilterChange, initialFilters }) {
+  const [selectedRegion, setSelectedRegion] = useState(initialFilters?.region || '');
+  const [selectedLanguage, setSelectedLanguage] = useState(initialFilters?.language || '');
 
   const regions = ['Africa', 'Americas', 'Asia', 'Europe', 'Oceania'];
-  const languages = ['English', 'Spanish', 'French', 'German', 'Italian']; // Add more languages as required
+  const languages = ['English', 'Spanish', 'French', 'German', 'Italian'];
+
+  // Update state when initialFilters changes
+  useEffect(() => {
+    setSelectedRegion(initialFilters?.region || '');
+    setSelectedLanguage(initialFilters?.language || '');
+  }, [initialFilters]);
 
   const handleRegionChange = (e) => {
     const region = e.target.value;
