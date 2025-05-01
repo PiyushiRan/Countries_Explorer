@@ -1,22 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function CountryCard({ country,minimal = false }) {
+function CountryCard({ country, minimal = false }) {
   const navigate = useNavigate();
   const [isFavorite, setIsFavorite] = useState(false);
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
-  
+  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
+    // Get favorites from localStorage
     const favs = JSON.parse(localStorage.getItem('favorites')) || [];
     setIsFavorite(favs.includes(country.cca3));
-
-    const handleThemeChange = () => {
-      setTheme(localStorage.getItem('theme') || 'light');
-    };
-
-    window.addEventListener('storage', handleThemeChange);
-    return () => window.removeEventListener('storage', handleThemeChange);
+    
+    // Get theme from localStorage
+    const storedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(storedTheme);
   }, [country.cca3]);
 
   const toggleFavorite = (e) => {
@@ -39,10 +36,10 @@ function CountryCard({ country,minimal = false }) {
 
   return (
     <div
-      className={`card h-100 ${theme === 'dark' ? 'bg-secondary text-white' : ''}`}
+      className={`card h-100 country-card ${theme === 'dark' ? 'dark-mode' : 'light-mode'}`}
       onClick={handleClick}
       style={{ cursor: 'pointer' }}
-      role="article" 
+      role="article"
     >
       <img src={country.flags.svg} className="card-img-top" alt={country.name.common} />
       <div className="card-body">
