@@ -1,75 +1,43 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { getAllCountries, getCountryByName, getCountriesByRegion } from '../services/api';
 import CountryCard from '../components/CountryCard';
 import SearchBar from '../components/SearchBar';
 import FilterBar from '../components/FilterBar';
 
-function Home() {
+function Home({ theme }) {
   const [countries, setCountries] = useState([]);
   const [filteredCountries, setFilteredCountries] = useState([]);
   const [showScrollBar, setShowScrollBar] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [darkMode, setDarkMode] = useState(false); // New state for dark mode
+  const [searchQuery, setSearchQuery] = useState(localStorage.getItem('searchQuery') || '');
+  const [filters, setFilters] = useState(
+    JSON.parse(localStorage.getItem('filters')) || { region: '', language: '' }
+  );
 
-  // Check user's preferred color scheme
+  // Apply theme class to body
   useEffect(() => {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setDarkMode(prefersDark);
-    
-    // Listen for changes in system preference
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = () => setDarkMode(mediaQuery.matches);
-    mediaQuery.addEventListener('change', handler);
-    
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, []);
+    document.body.classList.toggle('dark-mode', theme === 'dark');
+    document.body.classList.toggle('light-mode', theme === 'light');
+  }, [theme]);
 
-  // Apply dark/light class to body
-  useEffect(() => {
-    document.body.classList.toggle('dark-mode', darkMode);
-    document.body.classList.toggle('light-mode', !darkMode);
-  }, [darkMode]);
-
+  // Fetch all countries on mount
   useEffect(() => {
     setIsLoading(true);
     getAllCountries()
       .then(data => {
         setCountries(data);
-        setFilteredCountries(data);
         setIsLoading(false);
       })
-      .catch(() => setIsLoading(false));
+      .catch(() => {
+        setFilteredCountries([]);
+        setIsLoading(false);
+      });
   }, []);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollBar(window.scrollY > 150);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const handleSearch = (query) => {
-    if (query === '') {
-      setFilteredCountries(countries);
-    } else {
-      setIsLoading(true);
-      getCountryByName(query)
-        .then(data => {
-          setFilteredCountries(data);
-          setIsLoading(false);
-        })
-        .catch(() => {
-          setFilteredCountries([]);
-          setIsLoading(false);
-        });
-    }
-  };
-
-  const handleFilterChange = async ({ region, language }) => {
+  // Memoized applyFilters function
+  const applyFilters = useCallback(async (data, { region, language }) => {
     setIsLoading(true);
-    let filteredData = countries;
+    let filteredData = data;
 
     try {
       if (region) {
@@ -94,6 +62,89 @@ function Home() {
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  // Apply persisted search and filters after countries are loaded
+  useEffect(() => {
+    if (!countries.length) return;
+
+    if (searchQuery) {
+      setIsLoading(true);
+      getCountryByName(searchQuery)
+        .then(data => {
+          if (filters.region || filters.language) {
+            applyFilters(data, filters);
+          } else {
+            setFilteredCountries(data);
+            setIsLoading(false);
+          }
+        })
+        .catch(() => {
+          setFilteredCountries([]);
+          setIsLoading(false);
+        });
+    } else if (filters.region || filters.language) {
+      applyFilters(countries, filters);
+    } else {
+      setFilteredCountries(countries);
+    }
+  }, [countries, searchQuery, filters, applyFilters]);
+
+  // Handle scroll for scroll indicator
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollBar(window.scrollY > 150);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Handle search with persistence
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    localStorage.setItem('searchQuery', query);
+
+    if (query === '') {
+      if (filters.region || filters.language) {
+        applyFilters(countries, filters);
+      } else {
+        setFilteredCountries(countries);
+      }
+    } else {
+      setIsLoading(true);
+      getCountryByName(query)
+        .then(data => {
+          if (filters.region || filters.language) {
+            applyFilters(data, filters);
+          } else {
+            setFilteredCountries(data);
+          }
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setFilteredCountries([]);
+          setIsLoading(false);
+        });
+    }
+  };
+
+  // Handle filter change with persistence
+  const handleFilterChange = ({ region, language }) => {
+    const newFilters = { region: region || '', language: language || '' };
+    setFilters(newFilters);
+    localStorage.setItem('filters', JSON.stringify(newFilters));
+
+    applyFilters(searchQuery ? filteredCountries : countries, newFilters);
+  };
+
+  // Clear search and filters
+  const handleClearAll = () => {
+    setSearchQuery('');
+    setFilters({ region: '', language: '' });
+    localStorage.removeItem('searchQuery');
+    localStorage.removeItem('filters');
+    setFilteredCountries(countries);
   };
 
   const scrollToTop = () => {
@@ -103,25 +154,18 @@ function Home() {
     });
   };
 
-
   return (
-    <div className={`home-page ${darkMode ? 'dark-mode' : 'light-mode'}`}>      
-
-      {/* Scroll indicator */}
+    <div className={`home-page ${theme === 'dark' ? 'dark-mode' : 'light-mode'}`}>
       {showScrollBar && (
-        <div 
-          className="scroll-indicator" 
-          onClick={scrollToTop}
-        >
+        <div className="scroll-indicator" onClick={scrollToTop}>
           <span>🌎 Exploring Countries</span>
           <span className="scroll-to-top">↑ Back to top</span>
         </div>
       )}
 
-      <main className="home-container" >
-        {/* Hero Section */}
+      <main className="home-container">
         <section className="hero-section">
-          <div className="hero-content" >
+          <div className="hero-content">
             <h1 className="hero-title">
               <span className="hero-icon">🌍</span>
               EarthCompass
@@ -132,24 +176,32 @@ function Home() {
           </div>
         </section>
 
-        {/* Search & Filter Section */}
         <section className="search-filter-section">
           <div className="container">
             <div className="search-filter-card">
-              <div className="search-container">
-                <SearchBar onSearch={handleSearch} />
+              <div className="row align-items-center">
+                <div className="col-md-6 mb-2 mb-md-0">
+                  <SearchBar onSearch={handleSearch} initialQuery={searchQuery} />
+                </div>
+                <div className="col-md-6 mb-2 mb-md-0">
+                  <FilterBar
+                    onFilterChange={handleFilterChange}
+                    initialFilters={filters}
+                  />
+                </div>
               </div>
-              <div className="filter-container">
-                <FilterBar 
-                  onFilterChange={handleFilterChange} 
-                  countries={countries} 
-                />
+              <div className="text-center mt-3">
+                <button
+                  className="btn btn-outline-secondary clear-all-btn"
+                  onClick={handleClearAll}
+                >
+                  Clear All
+                </button>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Results Section */}
         <section className="results-section">
           <div className="container">
             {isLoading ? (
@@ -170,14 +222,15 @@ function Home() {
                     Showing <span className="highlight">{filteredCountries.length}</span> countries
                   </h2>
                 </div>
-                <div className="countries-grid">
+                <div className="row">
                   {filteredCountries.map((country) => (
-                    <CountryCard 
-                      key={country.cca3} 
-                      country={country} 
-                      minimal={true}
-                      darkMode={darkMode} // Pass darkMode prop to CountryCard
-                    />
+                    <div key={country.cca3} className="col-sm-6 col-md-4 col-lg-3 mb-4">
+                      <CountryCard
+                        country={country}
+                        minimal={true}
+                        theme={theme}
+                      />
+                    </div>
                   ))}
                 </div>
               </>
