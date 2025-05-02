@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getCountryByCode } from '../services/api';
 import CountryCard from '../components/CountryCard';
 
-function Favorites() {
+function Favorites({ theme }) {
   const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,14 +28,12 @@ function Favorites() {
   }, []);
 
   return (
-    <div style={{ backgroundColor: '#EAF6F6', minHeight: '100vh' }}>
+    <div className={`favorites-page ${theme === 'dark' ? 'dark-mode' : 'light-mode'}`}>
       <div className="container py-4">
         <div className="card shadow rounded mb-4 sticky-top">
           <div className="card-body">
             <h2 className="mb-3 text-center">⭐ Your Favorite Countries</h2>
-            <p className="text-muted text-center mb-0">
-              Here's a list of all the countries you've marked as favorites.
-            </p>
+            
           </div>
         </div>
 
@@ -54,7 +52,7 @@ function Favorites() {
           <div className="row">
             {countries.map((country) => (
               <div key={country.cca3} className="col-sm-6 col-md-4 col-lg-3 mb-4">
-                <CountryCard country={country} minimal={true} />
+                <CountryCard country={country} minimal={true} theme={theme} />
               </div>
             ))}
           </div>
