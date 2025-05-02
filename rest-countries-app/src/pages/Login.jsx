@@ -8,12 +8,7 @@ function Login({ setUsername }) {
   const navigate = useNavigate();
 
   const handleLogin = () => {
-    // Simulated credentials (you can add more users here)
-    const users = [
-      { username: 'admin', password: 'admin123' },
-      { username: 'user', password: 'user123' }
-    ];
-
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
     const matchedUser = users.find(
       (user) =>
         user.username === inputUsername.trim() &&
@@ -29,12 +24,11 @@ function Login({ setUsername }) {
     }
   };
 
-  // Shared container style for background image
   const containerStyle = {
     position: 'fixed',
-    inset: 0, // top: 0, right: 0, bottom: 0, left: 0
+    inset: 0,
     overflow: 'hidden',
-    backgroundImage: "url('/images/world-bg.jpeg')",
+    backgroundImage: "url('https://images.pexels.com/photos/41953/earth-blue-planet-globe-planet-41953.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')",
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
@@ -48,9 +42,7 @@ function Login({ setUsername }) {
     <div style={containerStyle}>
       <div className="card shadow p-4" style={{ minWidth: '300px', maxWidth: '400px', width: '100%' }}>
         <h3 className="text-center mb-4">Login</h3>
-
         {error && <div className="alert alert-danger">{error}</div>}
-
         <div className="mb-3">
           <label className="form-label">Username</label>
           <input
@@ -61,7 +53,6 @@ function Login({ setUsername }) {
             onChange={(e) => setInputUsername(e.target.value)}
           />
         </div>
-
         <div className="mb-4">
           <label className="form-label">Password</label>
           <input
@@ -72,7 +63,6 @@ function Login({ setUsername }) {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-
         <button
           className="btn btn-primary w-100"
           onClick={handleLogin}
