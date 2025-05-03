@@ -10,6 +10,6 @@ test('renders the app without crashing', () => {
   );
 
   expect(
-    screen.getByRole('heading', { name: /rest countries explorer/i })
+    screen.getByRole('heading', { name: /welcome to earthcompass/i })
   ).toBeInTheDocument();
 });
