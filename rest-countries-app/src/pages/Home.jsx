@@ -124,7 +124,7 @@ function Home() {
           <div className="hero-content" >
             <h1 className="hero-title">
               <span className="hero-icon">🌍</span>
-              World Countries Explorer
+              EarthCompass
             </h1>
             <p className="hero-subtitle">
               Discover fascinating information about every country in the world
