@@ -29,7 +29,7 @@ function LandingPage() {
   return (
     <div style={containerStyle}>
       <div style={cardStyle} className="text-center">
-        <h1 className="mb-3">Welcome to REST Countries Explorer</h1>
+        <h1 className="mb-3">Welcome to EarthCompass</h1>
         <p className="mb-4 fs-5 text-muted">
           Discover information about countries around the world — powered by the REST Countries API.
         </p>
