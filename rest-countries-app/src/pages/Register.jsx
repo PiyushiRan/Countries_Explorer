@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function Register({ setUsername }) {
+function Register() {
   const [inputUsername, setInputUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -9,24 +9,38 @@ function Register({ setUsername }) {
   const navigate = useNavigate();
 
   const handleRegister = () => {
-    if (!inputUsername.trim() || !password.trim() || !confirmPassword.trim()) {
+    const trimmedUsername = inputUsername.trim();
+    const trimmedPassword = password.trim();
+    const trimmedConfirmPassword = confirmPassword.trim();
+
+    if (!trimmedUsername || !trimmedPassword || !trimmedConfirmPassword) {
       setError('All fields are required');
       return;
     }
-    if (password !== confirmPassword) {
+    if (trimmedPassword !== trimmedConfirmPassword) {
       setError('Passwords do not match');
       return;
     }
+
+    // Get existing users from localStorage
     const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    if (existingUsers.some(user => user.username === inputUsername.trim())) {
+    
+    // Check if username already exists
+    if (existingUsers.some(user => user.username.toLowerCase() === trimmedUsername.toLowerCase())) {
       setError('Username already exists');
       return;
     }
-    const newUser = { username: inputUsername.trim(), password: password.trim() };
+
+    // Create new user
+    const newUser = { username: trimmedUsername, password: trimmedPassword };
     const updatedUsers = [...existingUsers, newUser];
+    
+    // Update localStorage
     localStorage.setItem('users', JSON.stringify(updatedUsers));
-    localStorage.setItem('user', newUser.username);
-    setUsername(newUser.username);
+    localStorage.setItem('user', trimmedUsername); // Store the current user
+    localStorage.removeItem('user'); // Clear any existing user session
+    
+    // Navigate to login page
     navigate('/login');
   };
 
