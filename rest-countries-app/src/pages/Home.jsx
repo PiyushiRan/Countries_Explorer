@@ -7,27 +7,46 @@ import FilterBar from '../components/FilterBar';
 function Home() {
   const [countries, setCountries] = useState([]);
   const [filteredCountries, setFilteredCountries] = useState([]);
-  const [showScrollBar, setShowScrollBar] = useState(false); // NEW
+  const [showScrollBar, setShowScrollBar] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [darkMode, setDarkMode] = useState(false); // New state for dark mode
 
+  // Check user's preferred color scheme
   useEffect(() => {
-    getAllCountries().then(data => {
-      setCountries(data);
-      setFilteredCountries(data);
-    });
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setDarkMode(prefersDark);
+    
+    // Listen for changes in system preference
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = () => setDarkMode(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handler);
+    
+    return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
-  // Handle scroll
+  // Apply dark/light class to body
+  useEffect(() => {
+    document.body.classList.toggle('dark-mode', darkMode);
+    document.body.classList.toggle('light-mode', !darkMode);
+  }, [darkMode]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    getAllCountries()
+      .then(data => {
+        setCountries(data);
+        setFilteredCountries(data);
+        setIsLoading(false);
+      })
+      .catch(() => setIsLoading(false));
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 150) { // you can adjust 150 to a different number
-        setShowScrollBar(true);
-      } else {
-        setShowScrollBar(false);
-      }
+      setShowScrollBar(window.scrollY > 150);
     };
 
     window.addEventListener('scroll', handleScroll);
-
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -35,79 +54,136 @@ function Home() {
     if (query === '') {
       setFilteredCountries(countries);
     } else {
+      setIsLoading(true);
       getCountryByName(query)
-        .then(data => setFilteredCountries(data))
-        .catch(() => setFilteredCountries([]));
+        .then(data => {
+          setFilteredCountries(data);
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setFilteredCountries([]);
+          setIsLoading(false);
+        });
     }
   };
 
   const handleFilterChange = async ({ region, language }) => {
+    setIsLoading(true);
     let filteredData = countries;
 
-    if (region) {
-      try {
+    try {
+      if (region) {
         filteredData = await getCountriesByRegion(region);
-      } catch {
-        filteredData = [];
       }
-    }
 
-    if (language) {
-      filteredData = filteredData.filter(country => {
-        if (Array.isArray(country.languages)) {
-          return country.languages.includes(language);
-        }
-        if (typeof country.languages === 'object') {
-          return Object.values(country.languages).includes(language);
-        }
-        return country.languages === language;
-      });
-    }
+      if (language) {
+        filteredData = filteredData.filter(country => {
+          if (Array.isArray(country.languages)) {
+            return country.languages.includes(language);
+          }
+          if (typeof country.languages === 'object') {
+            return Object.values(country.languages).includes(language);
+          }
+          return country.languages === language;
+        });
+      }
 
-    setFilteredCountries(filteredData);
+      setFilteredCountries(filteredData);
+    } catch (error) {
+      setFilteredCountries([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+
   return (
-    <div style={{ backgroundColor: '#EAF6F6', minHeight: '200vh' }}>
-      {/* Scroll-down visible bar */}
+    <div className={`home-page ${darkMode ? 'dark-mode' : 'light-mode'}`}>      
+
+      {/* Scroll indicator */}
       {showScrollBar && (
-        <div className="scroll-bar position-fixed top-0 start-50 translate-middle-x bg-primary text-white p-2 rounded shadow" style={{ zIndex: 1050 }}>
-          <span>You're browsing countries 🌎</span>
+        <div 
+          className="scroll-indicator" 
+          onClick={scrollToTop}
+        >
+          <span>🌎 Exploring Countries</span>
+          <span className="scroll-to-top">↑ Back to top</span>
         </div>
       )}
 
-      {/* Add paddingTop here */}
-      <main className="p-3" style={{ paddingTop: '80px' }}>
-        <div className="container py-4">
-          <div className="card shadow rounded mb-4">
-            <div className="card-body">
-              <h2 className="mb-3 text-center">🌍 Countries Explorer</h2>
-              <p className="text-muted text-center mb-4">Search, filter and explore information about countries worldwide.</p>
-              <div className="mb-3">
+      <main className="home-container" >
+        {/* Hero Section */}
+        <section className="hero-section">
+          <div className="hero-content" >
+            <h1 className="hero-title">
+              <span className="hero-icon">🌍</span>
+              World Countries Explorer
+            </h1>
+            <p className="hero-subtitle">
+              Discover fascinating information about every country in the world
+            </p>
+          </div>
+        </section>
+
+        {/* Search & Filter Section */}
+        <section className="search-filter-section">
+          <div className="container">
+            <div className="search-filter-card">
+              <div className="search-container">
                 <SearchBar onSearch={handleSearch} />
               </div>
-              <FilterBar 
-                onFilterChange={handleFilterChange} 
-                countries={countries} 
-                setFilteredCountries={setFilteredCountries}
-              />
+              <div className="filter-container">
+                <FilterBar 
+                  onFilterChange={handleFilterChange} 
+                  countries={countries} 
+                />
+              </div>
             </div>
           </div>
+        </section>
 
-          {filteredCountries.length === 0 ? (
-            <div className="text-center mt-5">
-              <h5>😕 No countries found. Try adjusting your filters or search term.</h5>
-            </div>
-          ) : (
-            <div className="row">
-              {filteredCountries.map((country) => (
-                <div key={country.cca3} className="col-sm-6 col-md-4 col-lg-3 mb-4">
-                  <CountryCard country={country} minimal={true} />
+        {/* Results Section */}
+        <section className="results-section">
+          <div className="container">
+            {isLoading ? (
+              <div className="loading-state">
+                <div className="spinner"></div>
+                <p>Loading countries...</p>
+              </div>
+            ) : filteredCountries.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">😕</div>
+                <h3>No countries found</h3>
+                <p>Try adjusting your search or filter criteria</p>
+              </div>
+            ) : (
+              <>
+                <div className="results-header">
+                  <h2>
+                    Showing <span className="highlight">{filteredCountries.length}</span> countries
+                  </h2>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <div className="countries-grid">
+                  {filteredCountries.map((country) => (
+                    <CountryCard 
+                      key={country.cca3} 
+                      country={country} 
+                      minimal={true}
+                      darkMode={darkMode} // Pass darkMode prop to CountryCard
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </section>
       </main>
     </div>
   );
