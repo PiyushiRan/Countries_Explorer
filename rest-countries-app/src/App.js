@@ -59,9 +59,13 @@ function App() {
       <i className="bi bi-box-arrow-in-right me-1"></i> Login
     </button>
   )}
-  <button className="btn btn-sm btn-primary" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-    {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
-  </button>
+  <button 
+  className="btn btn-sm btn-primary" 
+  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+  style={{ backgroundColor: '#3498db', borderColor: '#3498db' }}
+>
+  {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+</button>
 </div>
 
           </div>
