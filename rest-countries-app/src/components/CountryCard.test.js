@@ -46,15 +46,18 @@ describe('CountryCard', () => {
     
     // Initial state (not favorite)
     expect(button).toHaveTextContent('🤍 Favorite');
+    expect(button).toHaveClass('btn-outline-primary');
     
     // First click - add to favorites
     fireEvent.click(button);
     expect(button).toHaveTextContent('❤️ Remove');
+    expect(button).toHaveClass('btn-danger');
     expect(JSON.parse(localStorage.getItem('favorites'))).toEqual(['IND']);
     
     // Second click - remove from favorites
     fireEvent.click(button);
     expect(button).toHaveTextContent('🤍 Favorite');
+    expect(button).toHaveClass('btn-outline-primary');
     expect(JSON.parse(localStorage.getItem('favorites'))).toEqual([]);
   });
 
@@ -62,8 +65,10 @@ describe('CountryCard', () => {
     localStorage.setItem('favorites', JSON.stringify(['IND']));
     render(<CountryCard country={mockCountry} />, { wrapper: MemoryRouter });
     
-    expect(screen.getByRole('button', { name: /remove/i })).toBeInTheDocument();
-    expect(screen.getByRole('button')).toHaveTextContent('❤️ Remove');
+    const button = screen.getByRole('button', { name: /remove/i });
+    expect(button).toBeInTheDocument();
+    expect(button).toHaveTextContent('❤️ Remove');
+    expect(button).toHaveClass('btn-danger');
   });
 
   test('navigates to country page when clicked', () => {
@@ -76,10 +81,21 @@ describe('CountryCard', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/country/IND');
   });
 
-  test('applies dark theme class when theme is dark', () => {
+  test('applies dark theme when theme is dark in localStorage', () => {
     localStorage.setItem('theme', 'dark');
     render(<CountryCard country={mockCountry} />, { wrapper: MemoryRouter });
     
-    expect(screen.getByRole('article')).toHaveClass('bg-secondary text-white');
+    const card = screen.getByRole('article');
+    expect(card).toHaveClass('dark-mode');
+    expect(card).not.toHaveClass('light-mode');
+  });
+
+  test('applies light theme by default', () => {
+    localStorage.removeItem('theme'); // Ensure no theme is set
+    render(<CountryCard country={mockCountry} />, { wrapper: MemoryRouter });
+    
+    const card = screen.getByRole('article');
+    expect(card).toHaveClass('light-mode');
+    expect(card).not.toHaveClass('dark-mode');
   });
 });
