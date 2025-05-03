@@ -35,15 +35,28 @@ function Home({ theme }) {
   }, []);
 
   // Memoized applyFilters function
-  const applyFilters = useCallback(async (data, { region, language }) => {
+  const applyFilters = useCallback(async (query, { region, language }) => {
     setIsLoading(true);
-    let filteredData = data;
+    let filteredData = countries; // Start with all countries
 
     try {
-      if (region) {
-        filteredData = await getCountriesByRegion(region);
+      // Apply search query first, if present
+      if (query) {
+        filteredData = await getCountryByName(query);
       }
 
+      // Apply region filter
+      if (region) {
+        filteredData = await getCountriesByRegion(region);
+        // If there's a search query, further filter by matching the query
+        if (query) {
+          filteredData = filteredData.filter(country =>
+            country.name.common.toLowerCase().includes(query.toLowerCase())
+          );
+        }
+      }
+
+      // Apply language filter
       if (language) {
         filteredData = filteredData.filter(country => {
           if (Array.isArray(country.languages)) {
@@ -62,32 +75,12 @@ function Home({ theme }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [countries]);
 
   // Apply persisted search and filters after countries are loaded
   useEffect(() => {
     if (!countries.length) return;
-
-    if (searchQuery) {
-      setIsLoading(true);
-      getCountryByName(searchQuery)
-        .then(data => {
-          if (filters.region || filters.language) {
-            applyFilters(data, filters);
-          } else {
-            setFilteredCountries(data);
-            setIsLoading(false);
-          }
-        })
-        .catch(() => {
-          setFilteredCountries([]);
-          setIsLoading(false);
-        });
-    } else if (filters.region || filters.language) {
-      applyFilters(countries, filters);
-    } else {
-      setFilteredCountries(countries);
-    }
+    applyFilters(searchQuery, filters);
   }, [countries, searchQuery, filters, applyFilters]);
 
   // Handle scroll for scroll indicator
@@ -104,29 +97,7 @@ function Home({ theme }) {
   const handleSearch = (query) => {
     setSearchQuery(query);
     localStorage.setItem('searchQuery', query);
-
-    if (query === '') {
-      if (filters.region || filters.language) {
-        applyFilters(countries, filters);
-      } else {
-        setFilteredCountries(countries);
-      }
-    } else {
-      setIsLoading(true);
-      getCountryByName(query)
-        .then(data => {
-          if (filters.region || filters.language) {
-            applyFilters(data, filters);
-          } else {
-            setFilteredCountries(data);
-          }
-          setIsLoading(false);
-        })
-        .catch(() => {
-          setFilteredCountries([]);
-          setIsLoading(false);
-        });
-    }
+    applyFilters(query, filters);
   };
 
   // Handle filter change with persistence
@@ -134,8 +105,7 @@ function Home({ theme }) {
     const newFilters = { region: region || '', language: language || '' };
     setFilters(newFilters);
     localStorage.setItem('filters', JSON.stringify(newFilters));
-
-    applyFilters(searchQuery ? filteredCountries : countries, newFilters);
+    applyFilters(searchQuery, newFilters);
   };
 
   // Clear search and filters
