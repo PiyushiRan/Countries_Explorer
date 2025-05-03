@@ -32,7 +32,7 @@ function App() {
       {/* Top Navbar - hidden on Landing and Login pages */}
       {!hideNavbar && (
         <nav className={`navbar navbar-expand-lg fixed-top ${theme === 'dark' ? 'navbar-dark bg-dark' : 'navbar-light bg-light'} px-4 shadow`}>
-          <Link className="navbar-brand fw-bold" to="/home">🌍 Countries Explorer</Link>
+          <Link className="navbar-brand fw-bold" to="/home">🌍 EarthCompass</Link>
           <div className="collapse navbar-collapse">
             <ul className="navbar-nav me-auto mb-2 mb-lg-0">
               <li className="nav-item">
